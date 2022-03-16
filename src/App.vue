@@ -1,0 +1,146 @@
+<template>
+  <div id="app">
+    <h1>年终奖计算器</h1>
+
+    <p>
+      月薪
+      <input type="number" v-model="salary" placeholder="请输入月薪" />
+    </p>
+
+    <table v-if="data.length">
+      <thead>
+        <tr>
+          <th>月数</th>
+          <th>税前</th>
+          <th>税后</th>
+          <th>说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="([x, y, z, w, k], $index) in data" :key="$index">
+          <td>{{ x }}个月</td>
+          <td>{{ y }}</td>
+          <td>{{ z }}</td>
+          <td>适用税率 {{ w }}%， 速算扣除数 {{ k }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<script>
+import { ref, computed } from "vue";
+// 数据来源 http://sh.bendibao.com/zffw/2022125/247953.shtm
+const config = `
+  0-3000 3 0
+  3000-12000 10 210
+  12000-25000 20 1410
+  25000-35000	25	2660
+  35000-55000 30 4410
+  55000-80000 35	7160
+  80000-	45	15160
+`
+  .trim()
+  .split(/\n/)
+  .map((l) => {
+    const [a, b, c] = l.trim().split(/\s+/);
+    let [x, y] = a.split("-");
+    x = +x;
+    y = y ? +y : Infinity;
+    return [+x, +y, +b / 100, +c];
+  });
+
+const calc = (num) => {
+  const m = num / 12;
+  const el = config.find(([min, max]) => m >= min && m < max);
+
+  return [
+    Math.round(num * (1 - el[2]) + el[3]),
+    Math.round(el[2] * 100),
+    el[3],
+  ];
+};
+
+export default {
+  setup() {
+    const salary = ref(10000);
+    const data = computed(() => {
+      if (salary.value > 0) {
+        let i = 1;
+        const res = [];
+
+        while (i < 12.5) {
+          const num = salary.value * i;
+          res.push([i, num, ...calc(num)]);
+          i += 0.5;
+        }
+        return res;
+      }
+      return [];
+    });
+
+    return {
+      salary,
+      data,
+    };
+  },
+};
+</script>
+
+<style>
+html {
+  margin: 0;
+  padding: 0;
+}
+body {
+  margin: 0 auto;
+  font-size: 16px;
+
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+input {
+  font-family: inherit;
+  font-size: inherit;
+}
+h1 {
+  font-size: 18px;
+}
+
+#app {
+  width: 100%;
+  max-width: 800px;
+  padding: 20px;
+
+  color: #2c3e50;
+}
+
+td,
+th {
+  padding: 8px;
+  border: 1px solid #ddd;
+}
+
+tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+tr:hover {
+  background-color: #ddd;
+}
+
+th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+
+  text-align: left;
+
+  background-color: #04aa6d;
+  color: white;
+}
+</style>
